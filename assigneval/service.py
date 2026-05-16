@@ -63,6 +63,20 @@ def run_evaluation(
     except ValueError as exc:
         raise EvaluationError(str(exc)) from exc
 
+    import shutil
+
+    if target.clone_url:
+        if not shutil.which("git"):
+            raise EvaluationError(
+                "Git is not available in this hosting environment. "
+                "Run AssignEval locally (./run-ui.sh) or on a VPS with git and gcc installed."
+            )
+        if not shutil.which("gcc"):
+            raise EvaluationError(
+                "gcc is not available in this hosting environment. "
+                "C compilation requires a full server — use local ./run-ui.sh or Railway/Render."
+            )
+
     questions = parse_questions(questions_path)
     cleanup_path: Path | None = None
 

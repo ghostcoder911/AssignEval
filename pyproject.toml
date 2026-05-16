@@ -1,0 +1,8 @@
+[project]
+name = "assigneval"
+version = "1.0.0"
+requires-python = ">=3.11"
+dependencies = ["flask>=3.0.0"]
+
+[tool.vercel]
+entrypoint = "api/index.py"
