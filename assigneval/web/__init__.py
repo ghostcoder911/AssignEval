@@ -1,0 +1,1 @@
+"""AssignEval web UI."""

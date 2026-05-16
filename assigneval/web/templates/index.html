@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AssignEval — C Assignment Grader</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="overlay" id="loading">
+    <div class="spinner"></div>
+    <p>Cloning repository, compiling &amp; running tests…</p>
+    <p style="font-size:0.85rem">This may take 30–60 seconds</p>
+  </div>
+  <div class="container">
+    <header>
+      <h1><span>Assign</span>Eval</h1>
+      <p>Automated C programming assignment evaluation for embedded systems courses</p>
+    </header>
+
+    <div class="card">
+      <form id="eval-form">
+        <label class="form-label" for="repo">GitHub repository or folder link</label>
+        <div class="input-row">
+          <input
+            type="url"
+            id="repo"
+            name="repo"
+            placeholder="https://github.com/user/repo/tree/main/path/to/Src"
+            autocomplete="url"
+            required
+          >
+          <button type="submit" class="btn btn-primary" id="submit-btn">Evaluate</button>
+        </div>
+        <p class="hint">
+          Paste a <strong>repo link</strong> or a <strong>folder link</strong> (GitHub
+          <code>/tree/branch/path</code>) pointing directly to where the <code>.c</code>
+          files live — e.g. <code>…/tree/main/Module…/Src</code>. Also supports
+          <code>README.md</code> with numbered solutions.
+        </p>
+      </form>
+    </div>
+
+    <div id="error" class="error-banner" role="alert"></div>
+
+    <section id="results">
+      <div class="card">
+        <div class="score-hero">
+          <div class="score-circle" id="score-pct" style="--pct: 0">
+            <div class="score-circle-inner">
+              <strong id="score-total">0</strong>
+              <small id="score-max">/ 270</small>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-box pass">
+              <div class="val" id="stat-full">0</div>
+              <div class="lbl">Full marks</div>
+            </div>
+            <div class="stat-box partial">
+              <div class="val" id="stat-partial">0</div>
+              <div class="lbl">Partial</div>
+            </div>
+            <div class="stat-box fail">
+              <div class="val" id="stat-missing">0</div>
+              <div class="lbl">Missing</div>
+            </div>
+            <div class="stat-box fail">
+              <div class="val" id="stat-compile">0</div>
+              <div class="lbl">Compile errors</div>
+            </div>
+            <div class="stat-box">
+              <div class="val" id="stat-matched">0/27</div>
+              <div class="lbl">Matched</div>
+            </div>
+          </div>
+        </div>
+        <p class="repo-line" id="repo-display"></p>
+        <div class="download-bar" id="download-bar" hidden>
+          <span class="download-label">Download report</span>
+          <button type="button" class="btn btn-download" data-format="json">JSON</button>
+          <button type="button" class="btn btn-download" data-format="txt">Text</button>
+          <button type="button" class="btn btn-download" data-format="html">HTML</button>
+          <button type="button" class="btn btn-download" data-format="csv">CSV</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size:1.1rem;margin-bottom:1rem">Question breakdown</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Q#</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Tests</th>
+                <th>Source</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

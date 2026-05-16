@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+*.html
+!assigneval/web/templates/**
+!assigneval/web/static/**
+Document*.pdf
+demo-report.html
