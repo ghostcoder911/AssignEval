@@ -29,6 +29,13 @@ Examples:
         help="GitHub repo URL, GitHub folder URL (/tree/branch/path), or local directory",
     )
     parser.add_argument(
+        "-t",
+        "--track",
+        choices=("c", "avr"),
+        default="c",
+        help="Assignment track: c (27 questions) or avr (15 ATmega328P questions)",
+    )
+    parser.add_argument(
         "-q",
         "--questions",
         default="C Assignment Questions BASIC REFRESHER.md",
@@ -53,18 +60,22 @@ Examples:
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
     args = parser.parse_args(argv)
-    questions_path = Path(args.questions)
-    if not questions_path.is_file():
-        print(f"Error: questions file not found: {questions_path}", file=sys.stderr)
-        return 1
+    questions_path = None
+    if args.questions != "C Assignment Questions BASIC REFRESHER.md":
+        questions_path = Path(args.questions)
+        if not questions_path.is_file():
+            print(f"Error: questions file not found: {questions_path}", file=sys.stderr)
+            return 1
 
     try:
-        report = run_evaluation(args.repo, questions_path)
+        report = run_evaluation(args.repo, questions_path, track=args.track)
     except EvaluationError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
     if args.verbose:
+        if report.questions_source:
+            print(f"Questions: {report.questions_source}", file=sys.stderr)
         if report.search_path:
             print(f"Search folder: {report.search_path}", file=sys.stderr)
         print(f"Matched {report.matched_count}/{report.questions_parsed} questions", file=sys.stderr)
@@ -72,7 +83,11 @@ Examples:
             print(f"  Q{d.question_number:02d}: {d.origin} ({d.confidence:.0%})", file=sys.stderr)
 
     repo_label = report.repo_label or args.repo
-    report_text = format_text_report(report.results, repo_label)
+    if report.track_label:
+        repo_label = f"{report.track_label} — {repo_label}"
+    report_text = format_text_report(
+        report.results, repo_label, max_total=report.max_total
+    )
 
     fmt = args.format
     if args.output:

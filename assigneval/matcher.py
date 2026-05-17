@@ -144,7 +144,7 @@ def build_sources_for_repo(
 ) -> dict[int, CodeSource]:
     from assigneval.discovery import collect_c_files
 
-    files = collect_c_files(roots)
+    files = collect_c_files(roots, track="c")
     file_entries = read_file_sources(files)
     readme_sections: dict[int, str] = {}
     for root in roots:

@@ -20,7 +20,7 @@ def format_text_report(
 ) -> str:
     lines: list[str] = []
     lines.append("=" * 72)
-    lines.append("C ASSIGNMENT EVALUATION REPORT")
+    lines.append("ASSIGNMENT EVALUATION REPORT")
     lines.append("=" * 72)
     lines.append(f"Repository : {repo_label}")
     lines.append(f"Evaluated  : {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")

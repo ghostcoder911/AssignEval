@@ -32,6 +32,19 @@ C_FOLDER_HINTS = (
     "assignments",
 )
 
+AVR_FOLDER_HINTS = (
+    "avr",
+    "atmega",
+    "atmega328",
+    "atmega328p",
+    "baremetal",
+    "bare metal",
+    "bare-metal",
+    "register",
+    "microcontroller",
+    "mcu",
+)
+
 README_NAMES = ("readme.md", "README.md", "Readme.md", "assignments.md")
 
 
@@ -88,6 +101,59 @@ def use_local_path(path: str | Path) -> Path:
     return p
 
 
+def find_assignment_roots(
+    repo_root: Path,
+    scope: Path | None = None,
+    track: str = "c",
+) -> list[Path]:
+    if track == "avr":
+        return find_avr_assignment_roots(repo_root, scope)
+    return find_c_assignment_roots(repo_root, scope)
+
+
+def find_avr_assignment_roots(repo_root: Path, scope: Path | None = None) -> list[Path]:
+    base = scope if scope is not None else repo_root
+    if not base.is_dir():
+        raise FileNotFoundError(f"Search path is not a directory: {base}")
+
+    roots: list[Path] = []
+    if scope is not None:
+        roots.append(scope)
+
+    for path in base.rglob("*"):
+        if not path.is_dir():
+            continue
+        name = path.name.lower()
+        if any(h in name for h in AVR_FOLDER_HINTS):
+            roots.append(path)
+
+    if not roots or (scope is not None and len(roots) == 1):
+        for path in base.rglob("*.c"):
+            if _is_likely_avr_assignment(path):
+                roots.append(path.parent)
+        roots = list(dict.fromkeys(roots))
+
+    if scope is not None and scope not in roots:
+        roots.insert(0, scope)
+    return roots or [base]
+
+
+def _is_likely_avr_assignment(path: Path) -> bool:
+    if path.suffix != ".c":
+        return False
+    skip_parts = ("stm32", "esp32", "unity", "node_modules", "driver_dev")
+    parts = {p.lower() for p in path.parts}
+    if any(s in parts for s in skip_parts):
+        return False
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")[:4000]
+    except OSError:
+        return False
+    return bool(
+        re.search(r"avr/io|TCCR|DDR[ABCD]|PORT[ABCD]|ISR\s*\(", text, re.I)
+    )
+
+
 def find_c_assignment_roots(repo_root: Path, scope: Path | None = None) -> list[Path]:
     """Find folders that likely contain assignment .c files.
 
@@ -134,17 +200,28 @@ def find_c_assignment_roots(repo_root: Path, scope: Path | None = None) -> list[
 
 
 def _is_likely_assignment(path: Path) -> bool:
-    skip = ("stm32", "esp32", "avr", "driver", "hal", "cmsis", "node_modules")
-    low = str(path).lower()
-    return path.suffix == ".c" and not any(s in low for s in skip)
+    skip_parts = (
+        "stm32",
+        "esp32",
+        "driver_dev",
+        "drivers",
+        "hal",
+        "cmsis",
+        "node_modules",
+        "test",
+        "unity",
+    )
+    parts = {p.lower() for p in path.parts}
+    return path.suffix == ".c" and not any(s in parts for s in skip_parts)
 
 
-def collect_c_files(roots: list[Path]) -> list[Path]:
+def collect_c_files(roots: list[Path], track: str = "c") -> list[Path]:
     files: list[Path] = []
     seen: set[Path] = set()
+    checker = _is_likely_avr_assignment if track == "avr" else _is_likely_assignment
     for root in roots:
         for path in root.rglob("*.c"):
-            if not _is_likely_assignment(path):
+            if not checker(path):
                 continue
             rp = path.resolve()
             if rp not in seen:

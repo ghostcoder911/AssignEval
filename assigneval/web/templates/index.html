@@ -3,24 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AssignEval — C Assignment Grader</title>
+  <title>AssignEval — Embedded Assignment Grader</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="bg-grid"></div>
   <div class="overlay" id="loading">
     <div class="spinner"></div>
-    <p>Cloning repository, compiling &amp; running tests…</p>
-    <p style="font-size:0.85rem">This may take 30–60 seconds</p>
+    <p id="loading-msg">Cloning repository, compiling &amp; running tests…</p>
+    <p style="font-size:0.85rem">This may take 30–90 seconds</p>
   </div>
   <div class="container">
     <header>
       <h1><span>Assign</span>Eval</h1>
-      <p>Automated C programming assignment evaluation for embedded systems courses</p>
+      <p>Automated assignment evaluation — C programming &amp; AVR ATmega328P bare metal</p>
     </header>
+
+    <div class="session-tabs" role="tablist">
+      <button type="button" class="session-tab active" data-track="c" role="tab" aria-selected="true">
+        C Programming <span class="tab-meta">27 × 10</span>
+      </button>
+      <button type="button" class="session-tab" data-track="avr" role="tab" aria-selected="false">
+        AVR Bare Metal <span class="tab-meta">15 × 10</span>
+      </button>
+    </div>
 
     <div class="card">
       <form id="eval-form">
+        <input type="hidden" id="track" name="track" value="c">
         <label class="form-label" for="repo">GitHub repository or folder link</label>
         <div class="input-row">
           <input
@@ -33,12 +43,15 @@
           >
           <button type="submit" class="btn btn-primary" id="submit-btn">Evaluate</button>
         </div>
-        <p class="hint">
-          Paste a <strong>repo link</strong> or a <strong>folder link</strong> (GitHub
-          <code>/tree/branch/path</code>) pointing directly to where the <code>.c</code>
-          files live — e.g. <code>…/tree/main/Module…/Src</code>. Also supports
-          <code>README.md</code> with numbered solutions.
+        <p class="hint" id="hint-c">
+          <strong>C session:</strong> Paste a repo or folder link to <code>.c</code> solutions
+          (e.g. <code>…/C programming</code> or <code>…/Src</code>).
         </p>
+        <p class="hint" id="hint-avr" hidden>
+          <strong>AVR session:</strong> Paste a link to AVR/ATmega328P register-level <code>.c</code>
+          files. Graded via <code>avr-gcc</code> + ATmega328P datasheet checks (no hardware).
+        </p>
+        <p class="hint hint-muted">Questions loaded from PDF or Markdown in the project folder.</p>
       </form>
     </div>
 

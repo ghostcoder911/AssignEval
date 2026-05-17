@@ -69,6 +69,51 @@ header p {
   font-size: 1rem;
 }
 
+.session-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.session-tab {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.session-tab:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.session-tab.active {
+  background: var(--surface2);
+  border-color: var(--accent);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--accent-dim);
+}
+
+.session-tab .tab-meta {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+.session-tab.active .tab-meta {
+  color: var(--accent);
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -151,6 +196,12 @@ input:focus {
   background: var(--surface2);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
+}
+
+.hint-muted {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  opacity: 0.85;
 }
 
 .error-banner {

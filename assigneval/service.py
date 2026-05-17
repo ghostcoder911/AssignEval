@@ -8,9 +8,13 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from assigneval.avr_evaluator import evaluate_avr_all
+from assigneval.avr_matcher import build_avr_sources_for_repo
+from assigneval.avr_questions import parse_avr_questions
+from assigneval.question_paths import resolve_questions_path
 from assigneval.discovery import (
     clone_repo,
-    find_c_assignment_roots,
+    find_assignment_roots,
     resolve_search_root,
     use_local_path,
 )
@@ -19,6 +23,22 @@ from assigneval.matcher import build_sources_for_repo
 from assigneval.questions import parse_questions
 from assigneval.repo_urls import parse_repo_input
 from assigneval.report import total_score
+
+TRACK_C = "c"
+TRACK_AVR = "avr"
+
+TRACK_CONFIG = {
+    TRACK_C: {
+        "label": "C Programming",
+        "parse": parse_questions,
+        "max_total": 270.0,
+    },
+    TRACK_AVR: {
+        "label": "AVR ATmega328P Bare Metal",
+        "parse": parse_avr_questions,
+        "max_total": 150.0,
+    },
+}
 
 
 @dataclass
@@ -38,6 +58,9 @@ class EvaluationReport:
     discovery: list[DiscoveryInfo]
     results: list[QuestionResult]
     summary: dict[str, int]
+    track: str = TRACK_C
+    track_label: str = "C Programming"
+    questions_source: str = ""
     search_path: str | None = None
     repo_label: str = ""
 
@@ -46,42 +69,54 @@ class EvaluationError(Exception):
     """Raised when evaluation cannot be completed."""
 
 
-def default_questions_path() -> Path:
-    return Path(__file__).resolve().parent.parent / "C Assignment Questions BASIC REFRESHER.md"
+def default_questions_path(track: str = TRACK_C) -> Path:
+    return resolve_questions_path(track)
+
+
+def _validate_host_tools(track: str) -> None:
+    if not shutil.which("git"):
+        raise EvaluationError(
+            "Git is not available in this hosting environment. "
+            "Run AssignEval locally (./run-ui.sh) or on a VPS with git installed."
+        )
+    if track == TRACK_AVR:
+        if not shutil.which("avr-gcc"):
+            raise EvaluationError(
+                "avr-gcc is not available. Install: sudo apt install gcc-avr avr-libc"
+            )
+    elif not shutil.which("gcc"):
+        raise EvaluationError(
+            "gcc is not available in this hosting environment. "
+            "Use local ./run-ui.sh or a server with build-essential installed."
+        )
 
 
 def run_evaluation(
     repo: str,
     questions_path: Path | None = None,
+    track: str = TRACK_C,
 ) -> EvaluationReport:
-    questions_path = questions_path or default_questions_path()
-    if not questions_path.is_file():
-        raise EvaluationError(f"Questions file not found: {questions_path}")
+    track = track.lower().strip()
+    if track not in TRACK_CONFIG:
+        raise EvaluationError(f"Unknown track '{track}'. Use 'c' or 'avr'.")
+
+    cfg = TRACK_CONFIG[track]
+    try:
+        questions_path = resolve_questions_path(track, questions_path)
+    except FileNotFoundError as exc:
+        raise EvaluationError(str(exc)) from exc
 
     try:
         target = parse_repo_input(repo)
     except ValueError as exc:
         raise EvaluationError(str(exc)) from exc
 
-    import shutil
-
-    if target.clone_url:
-        if not shutil.which("git"):
-            raise EvaluationError(
-                "Git is not available in this hosting environment. "
-                "Run AssignEval locally (./run-ui.sh) or on a VPS with git and gcc installed."
-            )
-        if not shutil.which("gcc"):
-            raise EvaluationError(
-                "gcc is not available in this hosting environment. "
-                "C compilation requires a full server — use local ./run-ui.sh or Railway/Render."
-            )
-
-    questions = parse_questions(questions_path)
+    questions = cfg["parse"](questions_path)
     cleanup_path: Path | None = None
 
     try:
         if target.clone_url:
+            _validate_host_tools(track)
             clone_dest = Path(tempfile.mkdtemp(prefix="assigneval_clone_"))
             cleanup_path = clone_dest
             try:
@@ -110,17 +145,22 @@ def run_evaluation(
         else:
             search_root = repo_root
 
-        roots = find_c_assignment_roots(
+        roots = find_assignment_roots(
             repo_root,
             scope=search_root if scoped else None,
+            track=track,
         )
-        sources = build_sources_for_repo(
-            repo_root,
-            questions,
-            roots,
-            scoped=scoped,
-        )
-        results = evaluate_all(questions, sources)
+
+        if track == TRACK_AVR:
+            sources = build_avr_sources_for_repo(
+                repo_root, questions, roots, scoped=scoped
+            )
+            results = evaluate_avr_all(questions, sources)
+        else:
+            sources = build_sources_for_repo(
+                repo_root, questions, roots, scoped=scoped
+            )
+            results = evaluate_all(questions, sources)
 
         discovery = [
             DiscoveryInfo(n, sources[n].origin, sources[n].confidence)
@@ -138,16 +178,15 @@ def run_evaluation(
             else:
                 summary["partial"] += 1
 
-        search_display = None
-        if scoped:
-            search_display = target.subpath
-
         return EvaluationReport(
             repo=repo,
             repo_label=target.display_label,
-            search_path=search_display,
+            search_path=target.subpath if scoped else None,
+            track=track,
+            track_label=cfg["label"],
+            questions_source=str(questions_path.name),
             total_score=total_score(results),
-            max_total=27 * 10.0,
+            max_total=cfg["max_total"],
             questions_parsed=len(questions),
             matched_count=len(sources),
             discovery=discovery,
@@ -166,6 +205,9 @@ def report_to_dict(report: EvaluationReport) -> dict:
         "repo": report.repo,
         "repo_label": report.repo_label or report.repo,
         "search_path": report.search_path,
+        "track": report.track,
+        "track_label": report.track_label,
+        "questions_source": report.questions_source,
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
         "total_score": report.total_score,
         "max_total": report.max_total,

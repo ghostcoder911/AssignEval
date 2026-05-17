@@ -1,0 +1,71 @@
+{
+  "mcu": "ATmega328P",
+  "package_notes": "Arduino Uno uses ATmega328P. Register-level bare-metal programming.",
+  "official_docs": {
+    "datasheet": "https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega328P-DS-DS40002061A.pdf",
+    "summary": "https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf"
+  },
+  "clock": {
+    "default_f_cpu_hz": 16000000,
+    "common_baud_9600_ubrr": 103
+  },
+  "gpio": {
+    "PORTB": { "ddr": "DDRB", "pin": "PINB", "port": "PORTB", "pins": "PB0-PB7" },
+    "PORTC": { "ddr": "DDRC", "pin": "PINC", "port": "PORTC", "pins": "PC0-PC6" },
+    "PORTD": { "ddr": "DDRD", "pin": "PIND", "port": "PORTD", "pins": "PD0-PD7" }
+  },
+  "special_pins": {
+    "OC0A": { "port": "PORTD", "bit": 6, "timer": "Timer0" },
+    "OC0B": { "port": "PORTD", "bit": 5, "timer": "Timer0" },
+    "OC1A": { "port": "PORTB", "bit": 1, "timer": "Timer1" },
+    "OC1B": { "port": "PORTB", "bit": 2, "timer": "Timer1" },
+    "OC2A": { "port": "PORTB", "bit": 3, "timer": "Timer2" },
+    "OC2B": { "port": "PORTD", "bit": 3, "timer": "Timer2" },
+    "INT0": { "port": "PORTD", "bit": 2, "vector": "INT0_vect" },
+    "INT1": { "port": "PORTD", "bit": 3, "vector": "INT1_vect" },
+    "ADC0": { "channel": 0, "pin": "PC0" },
+    "MOSI": "PB3",
+    "MISO": "PB4",
+    "SCK": "PB5",
+    "SDA": "PC4",
+    "SCL": "PC5"
+  },
+  "timers": {
+    "Timer0": {
+      "width": 8,
+      "registers": ["TCCR0A", "TCCR0B", "TCNT0", "OCR0A", "OCR0B", "TIMSK0"],
+      "pwm_modes": ["WGM00", "WGM01", "WGM02", "COM0A", "COM0B"],
+      "vectors": ["TIMER0_OVF_vect", "TIMER0_COMPA_vect", "TIMER0_COMPB_vect"]
+    },
+    "Timer1": {
+      "width": 16,
+      "registers": ["TCCR1A", "TCCR1B", "TCNT1", "OCR1A", "OCR1B", "TIMSK1"],
+      "vectors": ["TIMER1_OVF_vect", "TIMER1_COMPA_vect", "TIMER1_COMPB_vect"]
+    },
+    "Timer2": {
+      "width": 8,
+      "registers": ["TCCR2A", "TCCR2B", "TCNT2", "OCR2A", "OCR2B", "TIMSK2"],
+      "vectors": ["TIMER2_OVF_vect", "TIMER2_COMPA_vect", "TIMER2_COMPB_vect"]
+    }
+  },
+  "adc": {
+    "registers": ["ADMUX", "ADCSRA", "ADCH", "ADCL", "DIDR0"],
+    "reference": ["REFS0", "REFS1"]
+  },
+  "uart": {
+    "registers": ["UBRR0H", "UBRR0L", "UCSR0A", "UCSR0B", "UCSR0C", "UDR0"],
+    "baud_formula": "UBRR = (F_CPU / (16 * baud)) - 1"
+  },
+  "twi_i2c": {
+    "registers": ["TWBR", "TWSR", "TWDR", "TWCR", "TWAR"],
+    "bitrate_formula": "SCL = F_CPU / (16 + 2*TWBR * 4^TWPS)"
+  },
+  "spi": {
+    "registers": ["SPCR", "SPSR", "SPDR"]
+  },
+  "interrupts": {
+    "eimsk": "EIMSK",
+    "eicr": "EICRA",
+    "isf": "ISR(vector)"
+  }
+}

@@ -5,7 +5,40 @@ const errorBanner = document.getElementById("error");
 const resultsSection = document.getElementById("results");
 const overlay = document.getElementById("loading");
 const downloadBar = document.getElementById("download-bar");
+const trackInput = document.getElementById("track");
+const hintC = document.getElementById("hint-c");
+const hintAvr = document.getElementById("hint-avr");
+const loadingMsg = document.getElementById("loading-msg");
+const sessionTabs = document.querySelectorAll(".session-tab");
 let lastReport = null;
+let currentTrack = "c";
+
+const TRACK_META = {
+  c: { max: 270, loading: "Cloning repository, compiling & running C tests…" },
+  avr: {
+    max: 150,
+    loading: "Cloning repository, cross-compiling AVR & checking registers…",
+  },
+};
+
+sessionTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    currentTrack = tab.dataset.track;
+    trackInput.value = currentTrack;
+    sessionTabs.forEach((t) => {
+      const on = t === tab;
+      t.classList.toggle("active", on);
+      t.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    hintC.hidden = currentTrack !== "c";
+    hintAvr.hidden = currentTrack !== "avr";
+    document.getElementById("score-max").textContent =
+      `/ ${TRACK_META[currentTrack].max}`;
+    resultsSection.classList.remove("visible");
+    downloadBar.hidden = true;
+    hideError();
+  });
+});
 
 function showError(msg) {
   errorBanner.textContent = msg;
@@ -35,6 +68,11 @@ function renderResults(report) {
   document.getElementById("score-pct").style.setProperty("--pct", pct);
   document.getElementById("score-total").textContent = report.total_score.toFixed(1);
   document.getElementById("score-max").textContent = `/ ${report.max_total}`;
+  if (report.track_label) {
+    const hdr = document.querySelector("header p");
+    const src = report.questions_source ? ` · ${report.questions_source}` : "";
+    if (hdr) hdr.textContent = `Results: ${report.track_label}${src}`;
+  }
   document.getElementById("stat-full").textContent = report.summary.full_marks;
   document.getElementById("stat-partial").textContent = report.summary.partial;
   document.getElementById("stat-missing").textContent = report.summary.missing;
@@ -171,11 +209,12 @@ form.addEventListener("submit", async (e) => {
   }
 
   setLoading(true);
+  loadingMsg.textContent = TRACK_META[currentTrack].loading;
   try {
     const res = await fetch("/api/evaluate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ repo }),
+      body: JSON.stringify({ repo, track: currentTrack }),
     });
     const data = await res.json();
     if (!res.ok) {

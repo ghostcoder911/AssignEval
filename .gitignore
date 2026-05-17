@@ -7,5 +7,5 @@ venv/
 *.html
 !assigneval/web/templates/**
 !assigneval/web/static/**
-Document*.pdf
 demo-report.html
+.vercel

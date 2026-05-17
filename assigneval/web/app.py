@@ -31,13 +31,16 @@ def index():
 def evaluate():
     data = request.get_json(silent=True) or {}
     repo = (data.get("repo") or request.form.get("repo") or "").strip()
+    track = (data.get("track") or "c").lower().strip()
     if not repo:
         return jsonify({"error": "Please paste a Git repository URL."}), 400
     if not _REPO_PATTERN.match(repo):
         return jsonify({"error": "Invalid repository URL or path."}), 400
+    if track not in ("c", "avr"):
+        return jsonify({"error": "Invalid track. Use 'c' or 'avr'."}), 400
 
     try:
-        report = run_evaluation(repo, default_questions_path())
+        report = run_evaluation(repo, track=track)
         return jsonify({"ok": True, "report": report_to_dict(report)})
     except EvaluationError as exc:
         return jsonify({"error": str(exc)}), 400
